@@ -97,22 +97,23 @@ func main() {
 	}
 
 	u := fa.NewUser(c.User)
-	submissions(u, c)
+	submissions(u, c, faapi.SubmissionTypeGallery)
+	submissions(u, c, faapi.SubmissionTypeScraps)
 	journals(u, c)
 	log.Info("Done.")
 }
 
-func submissions(u *faapi.User, c *Config) {
-	log.Info("Processing submissions...")
+func submissions(u *faapi.User, c *Config, st faapi.SubmissionType) {
+	log.Infof("Processing submissions %s...", st.URI())
 	p := uint(0)
 	n := 0
 page:
 	for {
 		p++
 
-		subs, err := u.GetSubmissions(p)
+		subs, err := u.GetGallery(st, p)
 		if err != nil {
-			log.WithError(err).Error("Unable to get submissions")
+			log.WithError(err).Errorf("Unable to get submissions %s", st.URI())
 			os.Exit(1)
 		}
 		if len(subs) == 0 {
@@ -156,7 +157,7 @@ page:
 			}
 		}
 	}
-	log.Info("Done with submissions.")
+	log.Infof("Done with submissions %s.", st.URI())
 }
 
 func journals(u *faapi.User, c *Config) {
