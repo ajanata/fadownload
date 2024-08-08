@@ -31,8 +31,9 @@ package main
 import (
 	"time"
 
-	"github.com/ajanata/faapi"
 	"github.com/koding/multiconfig"
+
+	"github.com/ajanata/faapi"
 )
 
 type (
@@ -40,6 +41,7 @@ type (
 	Config struct {
 		User   string
 		Output string `default:"."`
+		Limit  int    `default:"2147483647"`
 
 		Debug          bool   `default:"false"`
 		LogLevel       string `default:"INFO"`

@@ -30,13 +30,13 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/ajanata/faapi"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ajanata/faapi"
 )
 
 func main() {
@@ -97,9 +97,19 @@ func main() {
 	}
 
 	u := fa.NewUser(c.User)
+	submissions(u, c)
+	journals(u, c)
+	log.Info("Done.")
+}
+
+func submissions(u *faapi.User, c *Config) {
+	log.Info("Processing submissions...")
 	p := uint(0)
+	n := 0
+page:
 	for {
 		p++
+
 		subs, err := u.GetSubmissions(p)
 		if err != nil {
 			log.WithError(err).Error("Unable to get submissions")
@@ -111,6 +121,11 @@ func main() {
 
 		log.WithField("page", p).Info("Got page")
 		for _, sub := range subs {
+			n++
+			if n > c.Limit {
+				break page
+			}
+
 			slog := log.WithField("title", sub.Title)
 			slog.Info("Downloading")
 			details, err := sub.Details()
@@ -126,12 +141,62 @@ func main() {
 
 			split := strings.Split(details.DownloadURL, "/")
 			name := fmt.Sprintf("%s/%s", c.Output, split[len(split)-1])
-			err = ioutil.WriteFile(name, bb, 0644)
+			err = os.WriteFile(name, bb, 0644)
 			if err != nil {
 				slog.WithError(err).Error("Unable to save download")
 				os.Exit(1)
 			}
+
+			name = name + "_details.txt"
+			meta := details.Description + "\n\n\n" + details.Stats
+			err = os.WriteFile(name, []byte(meta), 0644)
+			if err != nil {
+				slog.WithError(err).Error("Unable to save metadata")
+				os.Exit(1)
+			}
 		}
 	}
-	log.Info("Done.")
+	log.Info("Done with submissions.")
+}
+
+func journals(u *faapi.User, c *Config) {
+	log.Info("Processing journals...")
+	p := uint(0)
+	n := 0
+page:
+	for {
+		p++
+
+		journs, err := u.GetJournals(p)
+		if err != nil {
+			log.WithError(err).Error("Unable to get journals")
+			os.Exit(1)
+		}
+		if len(journs) == 0 {
+			break
+		}
+
+		log.WithField("page", p).Info("Got page")
+		for _, j := range journs {
+			n++
+			if n > c.Limit {
+				break page
+			}
+
+			slog := log.WithField("title", j.Title)
+			slog.Info("Downloading")
+			text, err := j.Content()
+			if err != nil {
+				slog.WithError(err).Error("Unable to download journal")
+				os.Exit(1)
+			}
+			name := fmt.Sprintf("%s/%d_%s_journal.txt", c.Output, j.ID, c.User)
+			err = os.WriteFile(name, []byte(text), 0644)
+			if err != nil {
+				slog.WithError(err).Error("Unable to save journal")
+				os.Exit(1)
+			}
+		}
+	}
+	log.Info("Done with journals.")
 }
