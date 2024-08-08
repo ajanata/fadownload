@@ -1,8 +1,8 @@
 # FA Download configuration file
 
 # Run a pprof debug server on http://localhost:6680/debug/pprof/
-debug = true
-logLevel = "DEBUG"
+debug = false
+logLevel = "INFO"
 # For colors in log output, useful in IDEs that properly interpret them but don't show up as TTYs
 logForceColors = true
 # Output logs in JSON format instead. Overrides logForceColors.
@@ -16,7 +16,7 @@ logJSON = false
 # for this to use that proxy.
 proxy = ""
 # You probably want to set this to what your browser says it is.
-userAgent = "fanotify/faapi/go"
+userAgent = "fadownload/faapi/go"
 # Requests to FA will not occur more frequently than this.
 # Note: Requests of facdn (for downloading images) are not constrained by this.
 rateLimit = "10s"
